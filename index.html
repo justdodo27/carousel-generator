@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carousel Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <style>
+        @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css");
+            a.active{
+                color: #c30704 !important;
+            }
+            .nav-link:hover{
+                color: #b01919;
+            }
+            .carousel-inner .carousel-item{
+                height:500px;
+                background-size:cover;
+                background-position: center center;
+            }
+            .carousel-control-prev-icon{
+                filter: drop-shadow(-3px 0px 1px black);
+            }
+            .carousel-control-next-icon{
+                filter: drop-shadow(3px 0px 1px black);
+            }
+            .image-container{
+              display: grid;
+              grid-template-columns: 1fr;
+              grid-template-rows: 1fr 1fr;
+            }
+    </style>
+</head>
+<body>
+    <script src="https://unpkg.com/vue@3"></script>
+
+    <div id="app" class="container">
+        <div class="row">
+            <h1 class="text-center">Form</h1>
+            <form @submit.prevent="">
+                <div class="mb-3">
+                    <label for="carousel-count" class="form-label">Carousels count: <span class="text-primary">{{ carouselCount }}</span></label>
+                    <input type="range" v-model="carouselCount" class="form-range" id="carousel-count" min="1" max="3">
+                </div>
+                <div class="mb-3" v-for="idx in parseInt(carouselCount)" :key="idx">
+                    <h4>Carousel {{ idx }}</h4>
+                    <div class="mb-3">
+                        <label :for="'carousel' + idx + 'title'" class="form-label">Title</label>
+                        <input type="text" class="form-control" :id="'carousel' + idx + 'title'" v-model="carousels[idx-1].title">
+                    </div>
+                    <div class="mb-3">
+                        <label :for="'carousel' + idx + 'height'" class="form-label">Height <span class="text-primary">{{ carousels[idx-1].height }}</span></label>
+                        <input type="range" class="form-range" min="50" max="1000" step="50" :id="'carousel' + idx + 'height'" v-model="carousels[idx-1].height">
+                    </div>
+                    <div class="mb-3">
+                        <h5>Photos <button class="btn btn-success text-white" @click="addPhoto(idx-1)"><i class="bi bi-plus"></i></button></h5>
+                        <div class="mb-3" v-for="(photo, photoIdx) in carousels[idx-1].photos" :key="photoIdx">
+                            <h5>Photo {{ photoIdx +1 }}</h5>
+                            <label :for="'photo' + idx + '-' + 'photoIdx'" class="form-label">URL</label>
+                            <div class="input-group">
+                                <input type="text" v-model="carousels[idx-1].photos[photoIdx]" class="form-control" :id="'photo' + idx + '-' + 'photoIdx'">
+                                <button class="btn btn-danger" @click="removePhoto(idx-1, photoIdx)"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="row">
+            <h1 class="text-center">Result</h1>
+            <div class="result">
+                <div class="mb-3 w-100" v-for="idx in parseInt(carouselCount)" :key="carousels[idx-1].photos.length">
+                    <h2 class="text-center">{{ carousels[idx-1].title }}</h2>
+                    <div :id="'carousel' + idx + 'Controls'" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="false">
+                        <div class="carousel-inner">
+                            <div v-for="(photo, photoIdx) in carousels[idx-1].photos" :key="photoIdx" :class="{'active': photoIdx == 0}" class="carousel-item" :style="'background-image: url(' + carousels[idx-1].photos[photoIdx] + '); height: ' + carousels[idx-1].height + 'px;'"></div>
+                        </div>
+                        <a class="carousel-control-prev" :href="'#carousel' + idx + 'Controls'" role="button" data-bs-slide="prev">
+                          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        </a>
+                        <a class="carousel-control-next" :href="'#carousel' + idx + 'Controls'" role="button" data-bs-slide="next">
+                          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="code">
+                <h1 class="text-center">Result code</h1>
+                <button class="btn btn-primary" @click="generate()">Generate code</button> Click text below to copy.
+                <p class="font-monospace border border-4 mt-2 p-3" @click="copy()">
+                    {{ result }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    Vue.createApp({
+        data() {
+        return {
+            message: 'Hello Vue!',
+            carouselCount: 1,
+            carousels: [
+                {
+                    title: "",
+                    height: 500,
+                    photos: []
+                },
+                {
+                    title: "",
+                    height: 500,
+                    photos: []
+                },
+                {
+                    title: "",
+                    height: 500,
+                    photos: []
+                },
+            ],
+            result: ''
+        }
+        },
+        methods: {
+            addPhoto(idx){
+                this.carousels[idx].photos.push("")
+            },
+            removePhoto(idx, photoIdx){
+                this.carousels[idx].photos.splice(photoIdx, 1)
+            },
+            generate(){
+                const carousel = document.querySelector(".result").innerHTML
+                const bsCSS = '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">'
+                const bsJS = '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"><\/script>'
+                const style = `
+                <style>
+        @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css");
+            a.active{
+                color: #c30704 !important;
+            }
+            .nav-link:hover{
+                color: #b01919;
+            }
+            .carousel-inner .carousel-item{
+                height:500px;
+                background-size:cover;
+                background-position: center center;
+            }
+            .carousel-control-prev-icon{
+                filter: drop-shadow(-3px 0px 1px black);
+            }
+            .carousel-control-next-icon{
+                filter: drop-shadow(3px 0px 1px black);
+            }
+            .image-container{
+              display: grid;
+              grid-template-columns: 1fr;
+              grid-template-rows: 1fr 1fr;
+            }
+    </style>
+                `
+                this.result = style + carousel + bsCSS + bsJS
+            },
+            copy(){
+                navigator.clipboard.writeText(this.result)
+                alert("Copied the text to clipboard");
+            }
+        }
+    }).mount('#app')
+    </script>
+</body>
+</html>
